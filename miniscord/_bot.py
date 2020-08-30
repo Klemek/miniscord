@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv
 
-from .utils import sanitize_input, parse_arguments
+from ._utils import sanitize_input, parse_arguments
 
 CommandFunction = Callable[[discord.Client, discord.Message, Tuple[str]], Coroutine[Any, Any, None]]
 
