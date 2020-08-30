@@ -42,7 +42,11 @@ bot.start()
 
 ## Installation
 
-*TODO*
+To install this package on your project, use :
+
+```
+pip install git+git://github.com/Klemek/miniscord.git
+```
 
 ## Documentation
 
@@ -50,7 +54,7 @@ bot.start()
 
 ## Versions
 
-*TODO*
+* v0.0.1 (WIP) : initial version
 
 ## TODO
 
