@@ -4,3 +4,8 @@ __pycache__
 .env
 error_*
 *.log
+test.py
+*.pyc
+.pytest_cache
+.coverage
+tmp

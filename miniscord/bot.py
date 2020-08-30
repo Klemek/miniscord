@@ -70,7 +70,7 @@ class Bot(object):
         self.alias = alias  # can call bot with {alias}{command_name}
         self.any_mention = False  # bot mention can be anywhere
         self.log_calls = False
-        self.guild_logs_file = "guilds.log"
+        self.guild_logs_file = "../guilds.log"
         self.enforce_write_permission = True
         self.lower_command_names = True
         self.game_change_delay = 10
@@ -197,6 +197,7 @@ class Bot(object):
                             f" #{message.channel} in server '{message.guild}'")
                         return
                 await command.compute(self.client, message, *command_args)
+                break
 
     async def on_guild_join(self, guild: discord.guild):
         if self.guild_logs_file is not None:
@@ -210,7 +211,7 @@ class Bot(object):
         pass
 
     def register_command(self, regex: str, compute: CommandFunction, help_short: str, help_long: str):
-        self.__commands += [Command(regex, compute, help_short, help_long)]
+        self.__commands.insert(0, Command(regex, compute, help_short, help_long))
 
     def start(self):
         logging.info(f"Current PID: {os.getpid()}")
