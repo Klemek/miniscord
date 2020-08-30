@@ -1,4 +1,4 @@
-from typing import List, Callable, Coroutine, Tuple, Any
+from typing import Callable, Coroutine, Tuple, Any
 import time
 import logging
 import traceback
@@ -10,48 +10,13 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv
 
+from .utils import sanitize_input, parse_arguments
 
 CommandFunction = Callable[[discord.Client, discord.Message, Tuple[str]], Coroutine[Any, Any, None]]
 
 
 def debug(message: discord.Message, txt: str):
     logging.info(f"{message.guild} > #{message.channel}: {txt}")
-
-
-async def delete_message(message: discord.Message) -> bool:
-    try:
-        await message.delete()
-        return True
-    except discord.Forbidden:
-        pass
-    except discord.NotFound:
-        pass
-    return False
-
-
-def message_id(message: discord.Message) -> str:
-    is_direct = message.channel.type == discord.ChannelType.private
-    if not is_direct:
-        return f'{message.guild.id}/{message.channel.id}/{message.author.id}'
-    else:
-        return message.author.id
-
-
-def sanitize_input(src: str) -> str:
-    return re.sub(r'[^A-Za-z0-9 _]', "", src.lower().strip())
-
-
-args_regex = re.compile('"([^"]*)"|\'([^\']*)\'|([^ ]+)')
-
-
-def parse_arguments(src: str) -> List[str]:
-    def get_found_match(m: list) -> str:
-        f = [g for g in m if len(g) > 0]
-        if len(f) > 0:
-            return f[0]
-        return ""
-
-    return [get_found_match(m) for m in args_regex.findall(src)]
 
 
 class Command(object):
