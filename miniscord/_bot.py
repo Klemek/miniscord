@@ -66,18 +66,22 @@ class Bot(object):
     def __register_commands(self):
         # register default commands
         tmp_alias = '' if self.alias is None else self.alias
-        self.register_command("(help|h)", self.help, "help: show this help",
-                              f"```\n"
-                              f"* {tmp_alias}help\n"
-                              f"\tShows the list of commands.\n"
-                              f"* {tmp_alias}help [command]\n"
-                              f"\tShows help about a specific command.\n"
-                              f"```")
-        self.register_command("(info|about)", self.info, "info: show description",
-                              f"```\n"
-                              f"* {tmp_alias}info:\n"
-                              f"\tShows this bot's status.\n"
-                              f"```")
+        self.register_command(
+            "(help|h)", self.help, "help: show this help",
+            f"```\n"
+            f"* {tmp_alias}help\n"
+            f"\tShows the list of commands.\n"
+            f"* {tmp_alias}help [command]\n"
+            f"\tShows help about a specific command.\n"
+            f"```"
+        )
+        self.register_command(
+            "(info|about)", self.info, "info: show description",
+            f"```\n"
+            f"* {tmp_alias}info:\n"
+            f"\tShows this bot's status.\n"
+            f"```"
+        )
 
     def __generate_game(self) -> str:
         game = random.choice(self.games)
@@ -86,12 +90,14 @@ class Bot(object):
         else:
             return game
 
-    async def info(self, _client: discord.client, message: discord.Message):
-        await message.channel.send(f"```\n"
-                                   f"{self.app_name} v{self.version}\n"
-                                   f"* Started at {self.__t0:%Y-%m-%d %H:%M}\n"
-                                   f"* Connected to {len(self.client.guilds)} guilds\n"
-                                   f"```")
+    async def info(self, _client: discord.client, message: discord.Message, *args: str):
+        await message.channel.send(
+            f"```\n"
+            f"{self.app_name} v{self.version}\n"
+            f"* Started at {self.__t0:%Y-%m-%d %H:%M}\n"
+            f"* Connected to {len(self.client.guilds)} guilds\n"
+            f"```"
+        )
 
     async def help(self, _client: discord.client, message: discord.Message, *args: str):
         if len(args) <= 1:
@@ -100,7 +106,8 @@ class Bot(object):
                 f"```\n"
                 f"List of available commands:\n" +
                 "".join([f"* {tmp_alias}{command.help_short}\n" for command in self.__commands]) +
-                f"```")
+                f"```"
+            )
         else:
             for command in self.__commands:
                 if re.match(command.regex, args[1].lower() if self.lower_command_names else args[1]):
@@ -159,7 +166,8 @@ class Bot(object):
                         await message.author.create_dm()
                         await message.author.dm_channel.send(
                             f"Hi, this bot doesn\'t have the permission to send a message to"
-                            f" #{message.channel} in server '{message.guild}'")
+                            f" #{message.channel} in server '{message.guild}'"
+                        )
                         return
                 await command.compute(self.client, message, *command_args)
                 break
@@ -176,6 +184,10 @@ class Bot(object):
         pass
 
     def register_command(self, regex: str, compute: CommandFunction, help_short: str, help_long: str):
+        if not regex.startswith("^"):
+            regex = "^" + regex
+        if not regex.endswith("$"):
+            regex = regex + "$"
         self.__commands.insert(0, Command(regex, compute, help_short, help_long))
 
     def start(self):
@@ -200,8 +212,10 @@ class Bot(object):
                     self.__last_error = repr(e)
                     filename = f"error_{t:%Y-%m-%d_%H-%M-%S}.txt"
                     with open(filename, 'w') as f:
-                        f.write(f"{self.app_name} v{self.version} started at {self.__t0:%Y-%m-%d %H:%M}\r\n"
-                                f"Exception raised at {t:%Y-%m-%d %H:%M}\r\n"
-                                f"\r\n"
-                                f"{traceback.format_exc()}")
+                        f.write(
+                            f"{self.app_name} v{self.version} started at {self.__t0:%Y-%m-%d %H:%M}\r\n"
+                            f"Exception raised at {t:%Y-%m-%d %H:%M}\r\n"
+                            f"\r\n"
+                            f"{traceback.format_exc()}"
+                        )
                 time.sleep(self.error_restart_delay)

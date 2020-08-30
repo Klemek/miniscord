@@ -1,4 +1,5 @@
 from unittest import TestCase
+
 from miniscord._utils import sanitize_input, parse_arguments
 
 
