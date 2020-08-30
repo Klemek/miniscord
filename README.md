@@ -55,7 +55,7 @@ bot.start()
 ## TODO
 
 * Finish README.md
-* Write tests
+* Write more tests
 * Add comments to code
 * Separate branches
 * Working CI
