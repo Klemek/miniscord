@@ -42,10 +42,17 @@ bot.start()
 
 ## Installation
 
-To install this package on your project, use :
+**1. Install package**
 
 ```
 pip install git+git://github.com/Klemek/miniscord.git
+```
+
+**2. Make a .env file as following**
+
+```
+#.env
+DISCORD_TOKEN=<bot token from discordapp.com/developers>
 ```
 
 ## Documentation
