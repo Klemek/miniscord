@@ -1,3 +1,4 @@
+[![Scc Count Badge](https://sloc.xyz/github/klemek/miniscord?category=code)](https://github.com/boyter/scc/#badges-beta)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/Klemek/miniscord.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Klemek/miniscord/alerts/)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Klemek/miniscord.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Klemek/miniscord/context:python)
 [![Coverage Status](https://coveralls.io/repos/github/Klemek/miniscord/badge.svg?branch=master)](https://coveralls.io/github/Klemek/miniscord?branch=master)
