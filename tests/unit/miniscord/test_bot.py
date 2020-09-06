@@ -1,8 +1,8 @@
 from unittest import TestCase, skip
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch, MagicMock
 from os import path
 import os
-from tests.utils import AsyncTestCase, patch_discord
+from tests.utils import AsyncTestCase, patch_discord, patch_discord_arg
 
 import discord
 from datetime import datetime
@@ -143,9 +143,74 @@ class TestOnMessage(AsyncTestCase):
 
 
 class TestOnReady(AsyncTestCase):
-    @skip
-    def test_todo(self):
-        self.fail("not implemented")
+    LOG_PATH = "guilds.log"
+
+    def setUp(self):
+        super().setUp()
+        if path.exists(self.LOG_PATH):
+            os.remove(self.LOG_PATH)
+
+    def tearDown(self):
+        super().tearDown()
+        if path.exists(self.LOG_PATH):
+            os.remove(self.LOG_PATH)
+
+    @patch_discord_arg
+    def test_no_log(self, client_mock):
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = None
+        ex = Exception("test")
+        client_mock.change_presence.side_effect = ex
+        try:
+            with patch("discord.Game") as game_mock:
+                game_mock.return_value = "activity"
+                self._await(bot.on_ready())
+        except Exception as error:
+            self.assertEqual(ex, error)
+        client_mock.change_presence.assert_called_with(
+            activity="activity",
+            status=discord.Status.online
+        )
+
+    @patch_discord_arg
+    def test_log_create(self, client_mock):
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = self.LOG_PATH
+        client_mock.change_presence.side_effect = Exception("test")
+        client_mock.guilds = [MagicMock(), MagicMock()]
+        client_mock.guilds[0].id = "id1"
+        client_mock.guilds[0].name = "name1"
+        client_mock.guilds[1].id = "id2"
+        client_mock.guilds[1].name = "name2"
+        d = datetime.now()
+        try:
+            with patch("discord.Game") as game_mock:
+                game_mock.return_value = "activity"
+                self._await(bot.on_ready())
+        except:
+            pass
+        with open(self.LOG_PATH, encoding="utf-8", mode="r") as f:
+            self.assertEqual(f"{d:%Y-%m-%d %H:%M} +id1: name1\n"
+                             f"{d:%Y-%m-%d %H:%M} +id2: name2\n", f.read())
+
+    @patch_discord_arg
+    def test_log_exists(self, client_mock):
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = self.LOG_PATH
+        client_mock.change_presence.side_effect = Exception("test")
+        client_mock.guilds = [MagicMock()]
+        client_mock.guilds[0].id = "id1"
+        client_mock.guilds[0].name = "name1"
+        with open(self.LOG_PATH, encoding="utf-8", mode="w") as f:
+            f.write("test")
+        try:
+            with patch("discord.Game") as game_mock:
+                game_mock.return_value = "activity"
+                self._await(bot.on_ready())
+        except:
+            pass
+        with open(self.LOG_PATH, encoding="utf-8", mode="r") as f:
+            self.assertEqual(f"test", f.read())
 
 
 class TestOnGuildJoin(AsyncTestCase):

@@ -1,3 +1,4 @@
+import functools
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 import asyncio
@@ -19,11 +20,26 @@ def pass_through(arg):
     return arg
 
 
-def patch_discord(test):
-    def wrapper(*args):
-        m = MagicMock()
-        m.event = pass_through
-        with patch("discord.Client", return_value=m):
-            test(*args)
+def __patch_discord_base(add_arg):
+    def test_decorator(test):
+        @functools.wraps(test)
+        def wrapper(*args, **kwargs):
+            client_mock = MagicMock()
+            client_mock.event = pass_through
+            with patch("discord.Client", return_value=client_mock):
+                if add_arg:
+                    test(*args, client_mock, **kwargs)
+                else:
+                    test(*args, **kwargs)
 
-    return wrapper
+        return wrapper
+
+    return test_decorator
+
+
+def patch_discord_arg(test):
+    return __patch_discord_base(True)(test)
+
+
+def patch_discord(test):
+    return __patch_discord_base(False)(test)
