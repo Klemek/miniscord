@@ -181,7 +181,6 @@ class Bot(object):
         if self.guild_logs_file is not None:
             with open(self.guild_logs_file, encoding="utf-8", mode="a") as f:
                 f.write(f"{datetime.now():%Y-%m-%d %H:%M} -{guild.id}: {guild.name}\n")
-        pass
 
     def register_command(self, regex: str, compute: CommandFunction, help_short: str, help_long: str):
         if not regex.startswith("^"):

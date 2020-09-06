@@ -58,7 +58,48 @@ DISCORD_TOKEN=<bot token from discordapp.com/developers>
 
 ## Documentation
 
-*TODO*
+### Bot init
+
+```python
+bot = Bot(  
+    "test-app",     # name
+    "0.1-alpha",    # version
+    alias="|"       # respond to '|command' messages
+)  
+```
+
+### Bot configuration properties
+
+* `token_env_var` (default: `"DISCORD_TOKEN"`)
+  * Which var to read in the `.env` file.
+* `remove_mentions` (default: `True`)
+  * Remove any mention in the message / arguments.
+* `any_mention` (default: `False`)
+  * If the bot respond to a mention in the middle of messages.
+* `log_calls` (default: `False`)
+  * Log any calls to the Python logging.
+* `guild_logs_file` (default: `"guilds.log"`)
+  * Log guilds join/leave on a file.
+* `enforce_write_permission` (default: `True`)
+  * If the bot can't respond on a channel it was called, it sends a DM to the caller.
+* `lower_command_names` (default: `True`)
+  * Use lowercase on command names (if false, commands are case-sensitive).
+* `game_change_delay` (default: `10`)
+  * Change the game status every n seconds.
+* `error_restart_delay` (default: `2`)
+  * On crash, restart after n seconds.
+
+### Registering commands
+
+TODO
+
+### Game status
+
+TODO
+
+### Exposed utility functions
+
+TODO
 
 ## Versions
 
