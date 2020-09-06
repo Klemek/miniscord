@@ -35,7 +35,7 @@ class Bot(object):
         self.alias = alias  # can call bot with {alias}{command_name}
         self.any_mention = False  # bot mention can be anywhere
         self.log_calls = False
-        self.guild_logs_file = "../guilds.log"
+        self.guild_logs_file = "guilds.log"
         self.enforce_write_permission = True
         self.lower_command_names = True
         self.game_change_delay = 10

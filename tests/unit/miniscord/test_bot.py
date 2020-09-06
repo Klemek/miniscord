@@ -1,5 +1,7 @@
 from unittest import TestCase, skip
 from unittest.mock import AsyncMock
+from os import path
+import os
 from tests.utils import AsyncTestCase, patch_discord
 
 import discord
@@ -147,30 +149,80 @@ class TestOnReady(AsyncTestCase):
 
 
 class TestOnGuildJoin(AsyncTestCase):
+    LOG_PATH = "guilds.log"
+
+    def setUp(self):
+        super().setUp()
+        if path.exists(self.LOG_PATH):
+            os.remove(self.LOG_PATH)
+
+    def tearDown(self):
+        super().tearDown()
+        if path.exists(self.LOG_PATH):
+            os.remove(self.LOG_PATH)
+
     @patch_discord
     def test_no_log(self):
         bot = Bot("app_name", "version")
         bot.guild_logs_file = None
         guild = AsyncMock()
         self._await(bot.on_guild_join(guild))
-        # nothing
-        # TODO test normal file path
+        self.assertFalse(path.exists(self.LOG_PATH))
 
-    @skip
+    @patch_discord
     def test_log(self):
-        self.fail("not implemented")
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = self.LOG_PATH
+        guild1 = AsyncMock()
+        guild1.id = "id1"
+        guild1.name = "name1"
+        guild2 = AsyncMock()
+        guild2.id = "id2"
+        guild2.name = "name2"
+        d = datetime.now()
+        self._await(bot.on_guild_join(guild1))
+        self._await(bot.on_guild_join(guild2))
+        self.assertTrue(path.exists(self.LOG_PATH))
+        with open(self.LOG_PATH, encoding="utf-8", mode="r") as f:
+            self.assertEqual(f"{d:%Y-%m-%d %H:%M} +id1: name1\n"
+                             f"{d:%Y-%m-%d %H:%M} +id2: name2\n", f.read())
 
 
 class TestOnGuildRemove(AsyncTestCase):
+    LOG_PATH = "guilds.log"
+
+    def setUp(self):
+        super().setUp()
+        if path.exists(self.LOG_PATH):
+            os.remove(self.LOG_PATH)
+
+    def tearDown(self):
+        super().tearDown()
+        if path.exists(self.LOG_PATH):
+            os.remove(self.LOG_PATH)
+
     @patch_discord
     def test_no_log(self):
         bot = Bot("app_name", "version")
         bot.guild_logs_file = None
         guild = AsyncMock()
-        self._await(bot.on_guild_remove(guild))
-        # nothing
-        # TODO test normal file path
+        self._await(bot.on_guild_join(guild))
+        self.assertFalse(path.exists(self.LOG_PATH))
 
-    @skip
+    @patch_discord
     def test_log(self):
-        self.fail("not implemented")
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = self.LOG_PATH
+        guild1 = AsyncMock()
+        guild1.id = "id1"
+        guild1.name = "name1"
+        guild2 = AsyncMock()
+        guild2.id = "id2"
+        guild2.name = "name2"
+        d = datetime.now()
+        self._await(bot.on_guild_remove(guild1))
+        self._await(bot.on_guild_remove(guild2))
+        self.assertTrue(path.exists(self.LOG_PATH))
+        with open(self.LOG_PATH, encoding="utf-8", mode="r") as f:
+            self.assertEqual(f"{d:%Y-%m-%d %H:%M} -id1: name1\n"
+                             f"{d:%Y-%m-%d %H:%M} -id2: name2\n", f.read())
