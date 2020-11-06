@@ -11,7 +11,7 @@ from miniscord import Bot
 import discord
 
 
-async def hello(client: discord.client, message: discord.Message):
+async def hello(client: discord.client, message: discord.Message, *args: str):
     await message.channel.send("Hello!")
 
 bot = Bot(
