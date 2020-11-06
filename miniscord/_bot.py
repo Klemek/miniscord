@@ -8,7 +8,7 @@ import asyncio
 import random
 import os
 from datetime import datetime
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 from ._utils import sanitize_input, parse_arguments
 
@@ -105,10 +105,10 @@ class Bot(object):
         if len(args) <= 1:
             tmp_alias = '' if self.alias is None else self.alias
             await message.channel.send(
-                f"```\n"
-                f"List of available commands:\n" +
-                "".join([f"* {tmp_alias}{command.help_short}\n" for command in self.__commands]) +
-                f"```"
+                "```\n"
+                "List of available commands:\n"
+                + "".join([f"* {tmp_alias}{command.help_short}\n" for command in self.__commands])
+                + "```"
             )
         else:
             for command in self.__commands:
@@ -210,7 +210,7 @@ class Bot(object):
 
     def start(self):
         logging.info(f"Current PID: {os.getpid()}")
-        env_file_found = load_dotenv()
+        env_file_found = load_dotenv(find_dotenv())
         self.__token = os.getenv(self.token_env_var)
         if self.__token is None:
             if env_file_found:

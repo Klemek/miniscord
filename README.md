@@ -10,6 +10,7 @@
 from miniscord import Bot
 import discord
 
+
 async def hello(client: discord.client, message: discord.Message):
     await message.channel.send("Hello!")
 
@@ -22,12 +23,12 @@ bot.register_command(
     "hello",                    # command text (regex)
     hello,                      # command function
     "hello: says 'Hello!'",     # short help
-    f"```\n"                    # long help
-    f"* |help\n"
-    f"\tSays 'Hello!'.\n"
-    f"```"
+    "```\n"                    # long help
+    "* |help\n"
+    "\tSays 'Hello!'.\n"
+    "```"
 )
-bot.start() # this bot respond to "|help", "|info" and "|hello"
+bot.start()  # this bot respond to "|help", "|info" and "|hello"
 ```
 
 ![](./sample.jpg)
@@ -275,8 +276,9 @@ async def hello(client: discord.client, message: discord.Message, *args: str):
     '''
     if len(args) > 1:
         await message.channel.send(f"Hello {args[1]}!")
-    else :
+    else:
         await message.channel.send("Hello stranger!")
+
 
 async def mention(client: discord.client, message: discord.Message, *args: str):
     channels[channel_id(message)] += 1
@@ -285,6 +287,7 @@ async def mention(client: discord.client, message: discord.Message, *args: str):
         f"{message.author.mention} mentioned me {senders[sender_id(message)]} times on this channel\n"
         f"{channels[channel_id(message)]} mentions on this channel so far"
     )
+
 
 async def message(client: discord.client, message: discord.Message):
     if "catapult" in message.content:
@@ -304,10 +307,10 @@ bot.register_command(
     "hello",                    # command text (regex)
     hello,                      # command function
     "hello: says 'Hello!'",     # short help
-    f"```\n"                    # long help
-    f"* |help\n"
-    f"\tSays 'Hello!'.\n"
-    f"```"
+    "```\n"                    # long help
+    "* |help\n"
+    "\tSays 'Hello!'.\n"
+    "```"
 )
 
 bot.register_fallback(mention)  # the bot was mentioned or the alias was used
