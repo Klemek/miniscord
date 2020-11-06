@@ -11,10 +11,16 @@ async def delete_message(message: discord.Message) -> bool:
         pass
     return False
 
-
-def message_id(message: discord.Message) -> str:
+def channel_id(message: discord.Message) -> str:
     is_direct = message.channel.type == discord.ChannelType.private
     if not is_direct:
-        return f'{message.guild.id}/{message.channel.id}/{message.author.id}'
+        return f'{message.guild.id}/{message.channel.id}'
+    else:
+        return message.author.id
+
+def sender_id(message: discord.Message) -> str:
+    is_direct = message.channel.type == discord.ChannelType.private
+    if not is_direct:
+        return f'{channel_id(message)}/{message.author.id}'
     else:
         return message.author.id

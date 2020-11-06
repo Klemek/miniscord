@@ -136,6 +136,18 @@ class TestRegisterCommand(TestCase):
         self.assertEqual("^test$", cmd.regex)
 
 
+class TestRegisterFallback(TestCase):
+    @skip
+    def test_todo(self):
+        self.fail("not implemented")
+
+
+class TestRegisterWatcher(TestCase):
+    @skip
+    def test_todo(self):
+        self.fail("not implemented")
+
+
 class TestOnMessage(AsyncTestCase):
     @skip
     def test_todo(self):
