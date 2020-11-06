@@ -119,7 +119,7 @@ bot.start()  # blocking function
 
 Register a custom function to be called on a certain keyword.
 
-> Note : You can override the "help" and "info" command by your own.
+> Note : You can override the "help" and "info" commands by your own.
 
 ```python
 async def hello(client: discord.client, message: discord.Message, *args: str):
@@ -217,7 +217,7 @@ import asyncio
 async def message(client: discord.client, message: discord.Message):
     if "catapult" in message.content:
         sent_msg = await message.channel.send(f"{message.author.mention} No profanity on this server")
-        if await delete_message(message):  # False if "manage messages" permission not allowed
+        if await delete_message(message):
             await asyncio.sleep(5)
             await delete_message(sent_msg)
 ```
@@ -226,7 +226,7 @@ async def message(client: discord.client, message: discord.Message):
 
 Helps identify where the discussion is happening (Might be used as a key in a state dictionary)
 
-A user on multiple channels will have a unique id on each.
+An user on multiple channels will have a unique id on each.
 
 ```python
 from miniscord import channel_id, sender_id
