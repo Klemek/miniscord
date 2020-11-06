@@ -14,6 +14,9 @@ import discord
 async def hello(client: discord.client, message: discord.Message, *args: str):
     await message.channel.send("Hello!")
 
+async def mention(client: discord.client, message: discord.Message, *args: str):
+    await message.channel.send(f"Did you mention me {message.author.mention}?")
+
 
 bot = Bot(  
     "test-app",     # name
@@ -29,6 +32,7 @@ bot.register_command(
     f"\tSays 'Hello!'.\n"
     f"```"
 )
+bot.register_fallback(mention)  # the bot was mentioned or the alias was used
 bot.start()
 # this bot respond to "|help", "|info" and "|hello"
 ```

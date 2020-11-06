@@ -49,6 +49,7 @@ class Bot(object):
         self.__last_error = None
         # init
         self.__commands = []
+        self.__fallback = None
         self.games = [f"v{version}",
                       lambda:f"{len(self.client.guilds)} guilds"]
         if self.alias is not None:
@@ -145,6 +146,8 @@ class Bot(object):
         command_args = parse_arguments(message.content)
 
         if len(command_args) == 0:
+            if self.__fallback is not None and is_mention:
+                await self.__fallback(self.client, message, *command_args)
             return  # Empty message
 
         is_alias = self.alias is not None and command_args[0].startswith(self.alias)
@@ -153,6 +156,8 @@ class Bot(object):
 
         if not is_direct and not is_mention and not is_alias:
             return  # Not for the bot
+
+        command_found = False
 
         for command in self.__commands:
             if re.match(command.regex, command_args[0].lower() if self.lower_command_names else command_args[0]):
@@ -169,8 +174,12 @@ class Bot(object):
                             f" #{message.channel} in server '{message.guild}'"
                         )
                         return
+                command_found = True
                 await command.compute(self.client, message, *command_args)
                 break
+
+        if not command_found and self.__fallback is not None:
+            await self.__fallback(self.client, message, *command_args)
 
     async def on_guild_join(self, guild: discord.guild):
         if self.guild_logs_file is not None:
@@ -188,6 +197,9 @@ class Bot(object):
         if not regex.endswith("$"):
             regex = regex + "$"
         self.__commands.insert(0, Command(regex, compute, help_short, help_long))
+
+    def register_fallback(self, compute: CommandFunction):
+        self.__fallback = compute
 
     def start(self):
         logging.info(f"Current PID: {os.getpid()}")
