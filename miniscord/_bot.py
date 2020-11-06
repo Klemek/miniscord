@@ -7,8 +7,9 @@ import re
 import asyncio
 import random
 import os
+from os import path
 from datetime import datetime
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 
 from ._utils import sanitize_input, parse_arguments
 
@@ -210,10 +211,11 @@ class Bot(object):
 
     def start(self):
         logging.info(f"Current PID: {os.getpid()}")
-        env_file_found = load_dotenv(find_dotenv())
+        env_file = path.join(os.getcwd(), ".env")
+        env_file_found = load_dotenv(env_file)
         self.__token = os.getenv(self.token_env_var)
         if self.__token is None:
-            if env_file_found:
+            if path.exists(env_file) and env_file_found:
                 raise EnvironmentError(f"No token was loaded, please verify your .env file has '{self.token_env_var}'")
             else:
                 raise EnvironmentError(f"No environment variable '{self.token_env_var}' found")
