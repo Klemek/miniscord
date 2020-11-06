@@ -31,7 +31,7 @@ class Bot(object):
     def __init__(self, app_name: str, version: str, *, alias: str = None):
         # constants
         self.token_env_var = "DISCORD_TOKEN"
-        self.remove_mentions = True  # remove mentions from arguments
+        self.remove_mentions = False  # remove mentions from arguments
         self.alias = alias  # can call bot with {alias}{command_name}
         self.any_mention = False  # bot mention can be anywhere
         self.log_calls = False
@@ -48,6 +48,7 @@ class Bot(object):
         self.__t0 = None
         self.__last_error = None
         # init
+        self.__watcher = None
         self.__commands = []
         self.__fallback = None
         self.games = [f"v{version}",
@@ -133,6 +134,9 @@ class Bot(object):
         if message.author == self.client.user:
             return  # Ignore self messages
 
+        if self.__watcher is not None:
+            await self.__watcher(self.client, message)
+
         is_direct = message.channel.type == discord.ChannelType.private
 
         is_mention = self.any_mention and self.client.user in message.mentions \
@@ -200,6 +204,9 @@ class Bot(object):
 
     def register_fallback(self, compute: CommandFunction):
         self.__fallback = compute
+
+    def register_watcher(self, compute: CommandFunction):
+        self.__watcher = compute
 
     def start(self):
         logging.info(f"Current PID: {os.getpid()}")
