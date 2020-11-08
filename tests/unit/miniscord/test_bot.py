@@ -113,46 +113,203 @@ class TestHelp(AsyncTestCase):
 
 class TestRegisterCommand(TestCase):
     @patch_discord
-    def test_normal(self):
+    def test_add_regex(self):
         bot = Bot("app_name", "version")
         self.assertEqual(2, len(bot._Bot__commands))
-
-        def fn():
-            pass
-
-        bot.register_command("^t[eo]a?st$", fn, "short", "long")
+        callback = AsyncMock()
+        bot.register_command("^t[eo]a?st$", callback, "short", "long")
         self.assertEqual(3, len(bot._Bot__commands))
         cmd = bot._Bot__commands[0]
         self.assertEqual("^t[eo]a?st$", cmd.regex)
-        self.assertEqual(fn, cmd.compute)
+        self.assertEqual(callback, cmd.compute)
         self.assertEqual("short", cmd.help_short)
         self.assertEqual("long", cmd.help_long)
 
     @patch_discord
-    def test_add_regex(self):
+    def test_add_simple(self):
         bot = Bot("app_name", "version")
         bot.register_command("test", None, None, None)
         cmd = bot._Bot__commands[0]
         self.assertEqual("^test$", cmd.regex)
 
 
-class TestRegisterFallback(TestCase):
-    @skip
-    def test_todo(self):
-        self.fail("not implemented")
-
-
-class TestRegisterWatcher(TestCase):
-    @skip
-    def test_todo(self):
-        self.fail("not implemented")
-
-
 class TestOnMessage(AsyncTestCase):
+    @patch_discord
+    def test_no_mention_minial(self):
+        bot = Bot("app_name", "version")
+        message = AsyncMock()
+        message.content = "hello there"
+        self._await(bot.on_message(message))
+
+    @patch_discord
+    def test_no_mention(self):
+        bot = Bot("app_name", "version")
+        bot.enforce_write_permission = False
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "hello there"
+        self._await(bot.on_message(message))
+        simple_callback.assert_not_awaited()
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_not_awaited()
+
+    @patch_discord
+    def test_mention_no_command(self):
+        bot = Bot("app_name", "version")
+        bot.enforce_write_permission = False
+        bot.client.user.id = '12345'
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "<@12345> testt arg0 arg1"
+        self._await(bot.on_message(message))
+        simple_callback.assert_not_awaited()
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_awaited_once_with(bot.client, message, "testt", "arg0", "arg1")
+
+    @patch_discord
+    def test_mention_no_command_empty(self):
+        bot = Bot("app_name", "version")
+        bot.enforce_write_permission = False
+        bot.client.user.id = '12345'
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "<@12345>"
+        self._await(bot.on_message(message))
+        simple_callback.assert_not_awaited()
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_awaited_once_with(bot.client, message)
+
+    @patch_discord
+    def test_mention_command_simple(self):
+        bot = Bot("app_name", "version")
+        bot.enforce_write_permission = False
+        bot.client.user.id = '12345'
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "<@12345> test arg0 arg1"
+        self._await(bot.on_message(message))
+        simple_callback.assert_awaited_once_with(bot.client, message, "test", "arg0", "arg1")
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_not_awaited()
+
+    @patch_discord
+    def test_mention_command_regex(self):
+        bot = Bot("app_name", "version")
+        bot.enforce_write_permission = False
+        bot.client.user.id = '12345'
+        regex_callback = AsyncMock()
+        bot.register_command("^t[eo]a?st$", regex_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "<@12345> toast hey"
+        self._await(bot.on_message(message))
+        regex_callback.assert_awaited_once_with(bot.client, message, "toast", "hey")
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_not_awaited()
+
+    @patch_discord
+    def test_mention_alias_no_command(self):
+        bot = Bot("app_name", "version", alias='|')
+        bot.enforce_write_permission = False
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "|toast hey"
+        self._await(bot.on_message(message))
+        simple_callback.assert_not_awaited()
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_awaited_once_with(bot.client, message, "toast", "hey")
+
+    @patch_discord
+    def test_mention_alias_command_simple(self):
+        bot = Bot("app_name", "version", alias='|')
+        bot.enforce_write_permission = False
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "|test hey"
+        self._await(bot.on_message(message))
+        simple_callback.assert_awaited_once_with(bot.client, message, "test", "hey")
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_not_awaited()
+
+    @patch_discord
+    def test_mention_no_permission(self):
+        bot = Bot("app_name", "version")
+        bot.client.user.id = '12345'
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "<@12345> test hey"
+        message.channel.__repr__ = lambda *a:'test_channel'
+        message.guild.__repr__ = lambda *a:'test_guild'
+        permissions = AsyncMock()
+        permissions.send_messages = False
+        message.channel.permissions_for = lambda u:permissions
+        self._await(bot.on_message(message))
+        simple_callback.assert_not_awaited()
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_not_awaited()
+        message.author.create_dm.assert_awaited_once()
+        message.author.dm_channel.send.assert_awaited_once_with(
+             f"Hi, this bot doesn\'t have the permission to send a message to"
+             f" #test_channel in server 'test_guild'"
+        )
+
     @skip
-    def test_todo(self):
+    def test_mention_self(self):
         self.fail("not implemented")
 
+    @skip
+    def test_mention_direct(self):
+        self.fail("not implemented")
+
+    @skip
+    def test_any_mention(self):
+        self.fail("not implemented")
+
+    @skip
+    def test_remove_mentions(self):
+        self.fail("not implemented")
+
+    @skip
+    def test_lower_command_names(self):
+        self.fail("not implemented")
 
 class TestOnReady(AsyncTestCase):
     LOG_PATH = "guilds.log"
