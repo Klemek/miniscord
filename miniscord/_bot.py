@@ -133,7 +133,11 @@ class Bot(object):
                     command.regex,
                     args[1].lower() if self.lower_command_names else args[1],
                 ):
-                    await message.channel.send(command.help_long)
+                    await message.channel.send(
+                        command.help_long,
+                        reference=message if self.answer else None,
+                        mention_author=self.answer_mention,
+                    )
                     return
             await message.channel.send(
                 f"Command `{sanitize_input(args[1])}` not found",
