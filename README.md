@@ -115,6 +115,10 @@ bot.start()  # blocking function
   * Change the game status every n seconds.
 * `error_restart_delay` (default: `2`)
   * On crash, restart after n seconds.
+* `answer` (default: `True`)
+  * Use the answer capability on `help` and `info` functions
+* `answer_mention` (default: `True`)
+  * Mention author in the answer
 
 ### Registering commands
 
@@ -325,6 +329,7 @@ bot.start()  # this bot respond to "|help", "|info" and "|hello"
 
 ## Versions
 
+* v0.0.2 : new answer capability
 * v0.0.1 : initial version
 
 ## TODO
