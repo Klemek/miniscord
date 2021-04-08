@@ -58,6 +58,7 @@ class Bot(object):
         self.__watcher = None
         self.__commands = []
         self.__fallback = None
+        self.__events = {}
         self.games = [f"v{version}", lambda: f"{len(self.client.guilds)} guilds"]
         if self.alias is not None:
             self.games += [f"{self.alias}help"]
@@ -67,10 +68,10 @@ class Bot(object):
         self.__register_commands()
 
     def __register_events(self):
-        self.on_ready = self.client.event(self.on_ready)
-        self.on_message = self.client.event(self.on_message)
-        self.on_guild_join = self.client.event(self.on_guild_join)
-        self.on_guild_remove = self.client.event(self.on_guild_remove)
+        self.client.event(self.on_ready)
+        self.client.event(self.on_message)
+        self.client.event(self.on_guild_join)
+        self.client.event(self.on_guild_remove)
 
     def __register_commands(self):
         # register default commands
@@ -145,7 +146,15 @@ class Bot(object):
                 mention_author=self.answer_mention,
             )
 
-    async def on_ready(self):
+    async def __handle_event(self, event_name: str, args: list) -> bool:
+        if event_name in self.__events:
+            return not await self.__events[event_name](*args)
+        return False
+
+    async def on_ready(self, *args):
+        if await self.__handle_event("on_ready", args):
+            return
+
         # Change status
         logging.info(
             f"{self.client.user} (v{self.version}) has connected to {len(self.client.guilds)} Discord guilds"
@@ -162,7 +171,10 @@ class Bot(object):
             )
             await asyncio.sleep(self.game_change_delay)
 
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message, *args):
+        if await self.__handle_event("on_message", [message, *args]):
+            return
+
         if message.author == self.client.user:
             return  # Ignore self messages
 
@@ -181,7 +193,7 @@ class Bot(object):
             message.content = re.sub(r"<@!?[^>]+>", "", message.content)
         elif is_mention:
             message.content = re.sub(
-                f"^<@!?{self.client.user.id}>", "", message.content
+                f"<@!?{self.client.user.id}>", "", message.content, count=1
             )
 
         command_args = parse_arguments(message.content)
@@ -200,12 +212,13 @@ class Bot(object):
 
         command_found = False
 
+        if self.lower_command_names:
+            command_args[0] = command_args[0].lower()
+
         for command in self.__commands:
             if re.match(
                 command.regex,
-                command_args[0].lower()
-                if self.lower_command_names
-                else command_args[0],
+                command_args[0],
             ):
                 if self.log_calls:
                     debug(message, str(command_args))
@@ -227,15 +240,28 @@ class Bot(object):
         if not command_found and self.__fallback is not None:
             await self.__fallback(self.client, message, *command_args)
 
-    async def on_guild_join(self, guild: discord.guild):
+    async def on_guild_join(self, guild: discord.guild, *args):
+        if await self.__handle_event("on_guild_join", [guild, *args]):
+            return
+
         if self.guild_logs_file is not None:
             with open(self.guild_logs_file, encoding="utf-8", mode="a") as f:
                 f.write(f"{datetime.now():%Y-%m-%d %H:%M} +{guild.id}: {guild.name}\n")
 
-    async def on_guild_remove(self, guild: discord.guild):
+    async def on_guild_remove(self, guild: discord.guild, *args):
+        if await self.__handle_event("on_guild_remove", [guild, *args]):
+            return
+
         if self.guild_logs_file is not None:
             with open(self.guild_logs_file, encoding="utf-8", mode="a") as f:
                 f.write(f"{datetime.now():%Y-%m-%d %H:%M} -{guild.id}: {guild.name}\n")
+
+    def register_event(self, event_callback: Callable):
+        event_name = event_callback.__name__
+        if event_name in dir(self):
+            self.__events[event_name] = event_callback
+        else:
+            self.client.event(event_callback)
 
     def register_command(
         self, regex: str, compute: CommandFunction, help_short: str, help_long: str

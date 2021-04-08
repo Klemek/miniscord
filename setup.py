@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="miniscord-Klemek",
-    version="0.0.2",
+    version="0.0.3",
     author="Klemek",
     description="A minimalist discord bot API",
     long_description=long_description,

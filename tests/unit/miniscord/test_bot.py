@@ -45,7 +45,9 @@ class TestInfo(AsyncTestCase):
             f"app_name vversion\n"
             f"* Started at {t0:%Y-%m-%d %H:%M}\n"
             f"* Connected to 3 guilds\n"
-            f"```"
+            f"```",
+            reference=message,
+            mention_author=False,
         )
 
 
@@ -60,7 +62,9 @@ class TestHelp(AsyncTestCase):
             f"List of available commands:\n"
             f"* info: show description\n"
             f"* help: show this help\n"
-            f"```"
+            f"```",
+            reference=message,
+            mention_author=False,
         )
 
     @patch_discord
@@ -73,7 +77,9 @@ class TestHelp(AsyncTestCase):
             f"List of available commands:\n"
             f"* ¡info: show description\n"
             f"* ¡help: show this help\n"
-            f"```"
+            f"```",
+            reference=message,
+            mention_author=False,
         )
 
     @patch_discord
@@ -90,7 +96,9 @@ class TestHelp(AsyncTestCase):
             f"* test1: desc1\n"
             f"* info: show description\n"
             f"* help: show this help\n"
-            f"```"
+            f"```",
+            reference=message,
+            mention_author=False,
         )
 
     @patch_discord
@@ -99,7 +107,9 @@ class TestHelp(AsyncTestCase):
         bot.register_command("test1", None, None, "long desc")
         message = AsyncMock()
         self._await(bot.help(None, message, "help", "test1"))
-        message.channel.send.assert_awaited_once_with("long desc")
+        message.channel.send.assert_awaited_once_with(
+            "long desc", reference=message, mention_author=False
+        )
 
     @patch_discord
     def test_long_regex(self):
@@ -108,7 +118,42 @@ class TestHelp(AsyncTestCase):
         bot.register_command("t.*", None, None, "desc2")
         message = AsyncMock()
         self._await(bot.help(None, message, "help", "test"))
-        message.channel.send.assert_awaited_once_with("desc2")
+        message.channel.send.assert_awaited_once_with(
+            "desc2", reference=message, mention_author=False
+        )
+
+    @patch_discord
+    def test_not_found(self):
+        bot = Bot("app_name", "version")
+        message = AsyncMock()
+        self._await(bot.help(None, message, "help", "notfound"))
+        message.channel.send.assert_awaited_once_with(
+            f"Command `notfound` not found",
+            reference=message,
+            mention_author=False,
+        )
+
+
+class TestRegisterEvent(TestCase):
+    @patch_discord
+    def test_register_event_normal(self):
+        async def on_connect():
+            pass
+
+        bot = Bot("app_name", "version")
+        bot.client.event = MagicMock()
+        bot.register_event(on_connect)
+        bot.client.event.assert_called_once_with(on_connect)
+
+    @patch_discord
+    def test_register_event_existing(self):
+        async def on_ready():
+            pass
+
+        bot = Bot("app_name", "version")
+        bot.client.event = MagicMock()
+        bot.register_event(on_ready)
+        bot.client.event.assert_not_called()
 
 
 class TestRegisterCommand(TestCase):
@@ -162,7 +207,7 @@ class TestOnMessage(AsyncTestCase):
     def test_mention_no_command(self):
         bot = Bot("app_name", "version")
         bot.enforce_write_permission = False
-        bot.client.user.id = '12345'
+        bot.client.user.id = "12345"
         simple_callback = AsyncMock()
         bot.register_command("test", simple_callback, "short", "long")
         watcher_callback = AsyncMock()
@@ -174,13 +219,15 @@ class TestOnMessage(AsyncTestCase):
         self._await(bot.on_message(message))
         simple_callback.assert_not_awaited()
         watcher_callback.assert_awaited_once_with(bot.client, message)
-        fallback_callback.assert_awaited_once_with(bot.client, message, "testt", "arg0", "arg1")
+        fallback_callback.assert_awaited_once_with(
+            bot.client, message, "testt", "arg0", "arg1"
+        )
 
     @patch_discord
     def test_mention_no_command_empty(self):
         bot = Bot("app_name", "version")
         bot.enforce_write_permission = False
-        bot.client.user.id = '12345'
+        bot.client.user.id = "12345"
         simple_callback = AsyncMock()
         bot.register_command("test", simple_callback, "short", "long")
         watcher_callback = AsyncMock()
@@ -198,7 +245,7 @@ class TestOnMessage(AsyncTestCase):
     def test_mention_command_simple(self):
         bot = Bot("app_name", "version")
         bot.enforce_write_permission = False
-        bot.client.user.id = '12345'
+        bot.client.user.id = "12345"
         simple_callback = AsyncMock()
         bot.register_command("test", simple_callback, "short", "long")
         watcher_callback = AsyncMock()
@@ -208,7 +255,9 @@ class TestOnMessage(AsyncTestCase):
         message = AsyncMock()
         message.content = "<@12345> test arg0 arg1"
         self._await(bot.on_message(message))
-        simple_callback.assert_awaited_once_with(bot.client, message, "test", "arg0", "arg1")
+        simple_callback.assert_awaited_once_with(
+            bot.client, message, "test", "arg0", "arg1"
+        )
         watcher_callback.assert_awaited_once_with(bot.client, message)
         fallback_callback.assert_not_awaited()
 
@@ -216,7 +265,7 @@ class TestOnMessage(AsyncTestCase):
     def test_mention_command_regex(self):
         bot = Bot("app_name", "version")
         bot.enforce_write_permission = False
-        bot.client.user.id = '12345'
+        bot.client.user.id = "12345"
         regex_callback = AsyncMock()
         bot.register_command("^t[eo]a?st$", regex_callback, "short", "long")
         watcher_callback = AsyncMock()
@@ -232,7 +281,7 @@ class TestOnMessage(AsyncTestCase):
 
     @patch_discord
     def test_mention_alias_no_command(self):
-        bot = Bot("app_name", "version", alias='|')
+        bot = Bot("app_name", "version", alias="|")
         bot.enforce_write_permission = False
         simple_callback = AsyncMock()
         bot.register_command("test", simple_callback, "short", "long")
@@ -249,7 +298,7 @@ class TestOnMessage(AsyncTestCase):
 
     @patch_discord
     def test_mention_alias_command_simple(self):
-        bot = Bot("app_name", "version", alias='|')
+        bot = Bot("app_name", "version", alias="|")
         bot.enforce_write_permission = False
         simple_callback = AsyncMock()
         bot.register_command("test", simple_callback, "short", "long")
@@ -267,7 +316,7 @@ class TestOnMessage(AsyncTestCase):
     @patch_discord
     def test_mention_no_permission(self):
         bot = Bot("app_name", "version")
-        bot.client.user.id = '12345'
+        bot.client.user.id = "12345"
         simple_callback = AsyncMock()
         bot.register_command("test", simple_callback, "short", "long")
         watcher_callback = AsyncMock()
@@ -276,40 +325,217 @@ class TestOnMessage(AsyncTestCase):
         bot.register_fallback(fallback_callback)
         message = AsyncMock()
         message.content = "<@12345> test hey"
-        message.channel.__repr__ = lambda *a:'test_channel'
-        message.guild.__repr__ = lambda *a:'test_guild'
+        message.channel.__repr__ = lambda *a: "test_channel"
+        message.guild.__repr__ = lambda *a: "test_guild"
         permissions = AsyncMock()
         permissions.send_messages = False
-        message.channel.permissions_for = lambda u:permissions
+        message.channel.permissions_for = lambda u: permissions
         self._await(bot.on_message(message))
         simple_callback.assert_not_awaited()
         watcher_callback.assert_awaited_once_with(bot.client, message)
         fallback_callback.assert_not_awaited()
         message.author.create_dm.assert_awaited_once()
         message.author.dm_channel.send.assert_awaited_once_with(
-             f"Hi, this bot doesn\'t have the permission to send a message to"
-             f" #test_channel in server 'test_guild'"
+            f"Hi, this bot doesn't have the permission to send a message to"
+            f" #test_channel in server 'test_guild'"
         )
 
-    @skip
+    @patch_discord
     def test_mention_self(self):
-        self.fail("not implemented")
+        bot = Bot("app_name", "version")
+        bot.enforce_write_permission = False
+        bot.client.user.id = "12345"
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "<@12345> test arg0 arg1"
+        message.author = bot.client.user
+        self._await(bot.on_message(message))
+        simple_callback.assert_not_awaited()
+        watcher_callback.assert_not_awaited()
+        fallback_callback.assert_not_awaited()
 
-    @skip
+    @patch_discord
     def test_mention_direct(self):
-        self.fail("not implemented")
+        bot = Bot("app_name", "version")
+        bot.enforce_write_permission = False
+        bot.client.user.id = "12345"
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "<@12345> test arg0 arg1"
+        message.channel.type == discord.ChannelType.private
+        self._await(bot.on_message(message))
+        simple_callback.assert_awaited_once_with(
+            bot.client, message, "test", "arg0", "arg1"
+        )
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_not_awaited()
 
-    @skip
+    @patch_discord
     def test_any_mention(self):
-        self.fail("not implemented")
+        bot = Bot("app_name", "version")
+        bot.enforce_write_permission = False
+        bot.any_mention = True
+        bot.client.user.id = "12345"
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "test <@12345> arg0 arg1"
+        message.channel.type == discord.ChannelType.private
+        message.mentions = [bot.client.user]
+        self._await(bot.on_message(message))
+        simple_callback.assert_awaited_once_with(
+            bot.client, message, "test", "arg0", "arg1"
+        )
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_not_awaited()
 
-    @skip
+    @patch_discord
+    def test_any_mention_off(self):
+        bot = Bot("app_name", "version")
+        bot.enforce_write_permission = False
+        bot.any_mention = False
+        bot.client.user.id = "12345"
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "test <@12345> arg0 arg1"
+        message.channel.type == discord.ChannelType.private
+        message.mentions = [bot.client.user]
+        self._await(bot.on_message(message))
+        simple_callback.assert_not_awaited()
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_not_awaited()
+
+    @patch_discord
     def test_remove_mentions(self):
-        self.fail("not implemented")
+        bot = Bot("app_name", "version")
+        bot.enforce_write_permission = False
+        bot.remove_mentions = True
+        bot.client.user.id = "12345"
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "<@12345> test <@12345> arg1"
+        self._await(bot.on_message(message))
+        simple_callback.assert_awaited_once_with(bot.client, message, "test", "arg1")
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_not_awaited()
 
-    @skip
+    @patch_discord
+    def test_remove_mentions_off(self):
+        bot = Bot("app_name", "version")
+        bot.enforce_write_permission = False
+        bot.remove_mentions = False
+        bot.client.user.id = "12345"
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "<@12345> test <@12345> arg1"
+        self._await(bot.on_message(message))
+        simple_callback.assert_awaited_once_with(
+            bot.client, message, "test", "<@12345>", "arg1"
+        )
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_not_awaited()
+
+    @patch_discord
     def test_lower_command_names(self):
-        self.fail("not implemented")
+        bot = Bot("app_name", "version")
+        bot.enforce_write_permission = False
+        bot.lower_command_names = True
+        bot.client.user.id = "12345"
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "<@12345> Test arg0 arg1"
+        self._await(bot.on_message(message))
+        simple_callback.assert_awaited_once_with(
+            bot.client, message, "test", "arg0", "arg1"
+        )
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_not_awaited()
+
+    @patch_discord
+    def test_lower_command_names_off(self):
+        bot = Bot("app_name", "version")
+        bot.enforce_write_permission = False
+        bot.lower_command_names = False
+        bot.client.user.id = "12345"
+        simple_callback = AsyncMock()
+        bot.register_command("test", simple_callback, "short", "long")
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        fallback_callback = AsyncMock()
+        bot.register_fallback(fallback_callback)
+        message = AsyncMock()
+        message.content = "<@12345> Test arg0 arg1"
+        self._await(bot.on_message(message))
+        simple_callback.assert_not_awaited()
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+        fallback_callback.assert_awaited_once_with(
+            bot.client, message, "Test", "arg0", "arg1"
+        )
+
+    @patch_discord
+    def test_fire_registered_event(self):
+        bot = Bot("app_name", "version")
+        on_message = AsyncMock()
+        on_message.__name__ = "on_message"
+        on_message.return_value = True
+        bot.register_event(on_message)
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        message = AsyncMock()
+        message.content = "hello there"
+        self._await(bot.on_message(message))
+        on_message.assert_awaited_once_with(message)
+        watcher_callback.assert_awaited_once_with(bot.client, message)
+
+    @patch_discord
+    def test_fire_registered_event_cancel(self):
+        bot = Bot("app_name", "version")
+        on_message = AsyncMock()
+        on_message.__name__ = "on_message"
+        on_message.return_value = False
+        bot.register_event(on_message)
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        message = AsyncMock()
+        message.content = "hello there"
+        self._await(bot.on_message(message))
+        on_message.assert_awaited_once_with(message)
+        watcher_callback.assert_not_awaited()
+
 
 class TestOnReady(AsyncTestCase):
     LOG_PATH = "guilds.log"
@@ -337,8 +563,7 @@ class TestOnReady(AsyncTestCase):
         except Exception as error:
             self.assertEqual(ex, error)
         client_mock.change_presence.assert_called_with(
-            activity="activity",
-            status=discord.Status.online
+            activity="activity", status=discord.Status.online
         )
 
     @patch_discord_arg
@@ -359,8 +584,10 @@ class TestOnReady(AsyncTestCase):
         except:
             pass
         with open(self.LOG_PATH, encoding="utf-8", mode="r") as f:
-            self.assertEqual(f"{d:%Y-%m-%d %H:%M} +id1: name1\n"
-                             f"{d:%Y-%m-%d %H:%M} +id2: name2\n", f.read())
+            self.assertEqual(
+                f"{d:%Y-%m-%d %H:%M} +id1: name1\n" f"{d:%Y-%m-%d %H:%M} +id2: name2\n",
+                f.read(),
+            )
 
     @patch_discord_arg
     def test_log_exists(self, client_mock):
@@ -380,6 +607,46 @@ class TestOnReady(AsyncTestCase):
             pass
         with open(self.LOG_PATH, encoding="utf-8", mode="r") as f:
             self.assertEqual(f"test", f.read())
+
+    @patch_discord_arg
+    def test_fire_registered_event(self, client_mock):
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = None
+        on_ready = AsyncMock()
+        on_ready.__name__ = "on_ready"
+        on_ready.return_value = True
+        bot.register_event(on_ready)
+        ex = Exception("test")
+        client_mock.change_presence.side_effect = ex
+        try:
+            with patch("discord.Game") as game_mock:
+                game_mock.return_value = "activity"
+                self._await(bot.on_ready())
+        except Exception as error:
+            self.assertEqual(ex, error)
+        on_ready.assert_awaited_once()
+        client_mock.change_presence.assert_called_with(
+            activity="activity", status=discord.Status.online
+        )
+
+    @patch_discord_arg
+    def test_fire_registered_event_cancel(self, client_mock):
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = None
+        on_ready = AsyncMock()
+        on_ready.__name__ = "on_ready"
+        on_ready.return_value = False
+        bot.register_event(on_ready)
+        ex = Exception("test")
+        client_mock.change_presence.side_effect = ex
+        try:
+            with patch("discord.Game") as game_mock:
+                game_mock.return_value = "activity"
+                self._await(bot.on_ready())
+        except Exception as error:
+            self.assertEqual(ex, error)
+        on_ready.assert_awaited_once()
+        client_mock.change_presence.assert_not_called()
 
 
 class TestOnGuildJoin(AsyncTestCase):
@@ -418,8 +685,36 @@ class TestOnGuildJoin(AsyncTestCase):
         self._await(bot.on_guild_join(guild2))
         self.assertTrue(path.exists(self.LOG_PATH))
         with open(self.LOG_PATH, encoding="utf-8", mode="r") as f:
-            self.assertEqual(f"{d:%Y-%m-%d %H:%M} +id1: name1\n"
-                             f"{d:%Y-%m-%d %H:%M} +id2: name2\n", f.read())
+            self.assertEqual(
+                f"{d:%Y-%m-%d %H:%M} +id1: name1\n" f"{d:%Y-%m-%d %H:%M} +id2: name2\n",
+                f.read(),
+            )
+
+    @patch_discord
+    def test_fire_registered_event(self):
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = self.LOG_PATH
+        on_guild_join = AsyncMock()
+        on_guild_join.__name__ = "on_guild_join"
+        on_guild_join.return_value = True
+        bot.register_event(on_guild_join)
+        guild = AsyncMock()
+        self._await(bot.on_guild_join(guild))
+        on_guild_join.assert_awaited_once_with(guild)
+        self.assertTrue(path.exists(self.LOG_PATH))
+
+    @patch_discord
+    def test_fire_registered_event_cancel(self):
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = self.LOG_PATH
+        on_guild_join = AsyncMock()
+        on_guild_join.__name__ = "on_guild_join"
+        on_guild_join.return_value = False
+        bot.register_event(on_guild_join)
+        guild = AsyncMock()
+        self._await(bot.on_guild_join(guild))
+        on_guild_join.assert_awaited_once_with(guild)
+        self.assertFalse(path.exists(self.LOG_PATH))
 
 
 class TestOnGuildRemove(AsyncTestCase):
@@ -458,5 +753,33 @@ class TestOnGuildRemove(AsyncTestCase):
         self._await(bot.on_guild_remove(guild2))
         self.assertTrue(path.exists(self.LOG_PATH))
         with open(self.LOG_PATH, encoding="utf-8", mode="r") as f:
-            self.assertEqual(f"{d:%Y-%m-%d %H:%M} -id1: name1\n"
-                             f"{d:%Y-%m-%d %H:%M} -id2: name2\n", f.read())
+            self.assertEqual(
+                f"{d:%Y-%m-%d %H:%M} -id1: name1\n" f"{d:%Y-%m-%d %H:%M} -id2: name2\n",
+                f.read(),
+            )
+
+    @patch_discord
+    def test_fire_registered_event(self):
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = self.LOG_PATH
+        on_guild_remove = AsyncMock()
+        on_guild_remove.__name__ = "on_guild_remove"
+        on_guild_remove.return_value = True
+        bot.register_event(on_guild_remove)
+        guild = AsyncMock()
+        self._await(bot.on_guild_remove(guild))
+        on_guild_remove.assert_awaited_once_with(guild)
+        self.assertTrue(path.exists(self.LOG_PATH))
+
+    @patch_discord
+    def test_fire_registered_event_cancel(self):
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = self.LOG_PATH
+        on_guild_remove = AsyncMock()
+        on_guild_remove.__name__ = "on_guild_remove"
+        on_guild_remove.return_value = False
+        bot.register_event(on_guild_remove)
+        guild = AsyncMock()
+        self._await(bot.on_guild_remove(guild))
+        on_guild_remove.assert_awaited_once_with(guild)
+        self.assertFalse(path.exists(self.LOG_PATH))
