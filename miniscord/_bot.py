@@ -193,7 +193,7 @@ class Bot(object):
             message.content = re.sub(r"<@!?[^>]+>", "", message.content)
         elif is_mention:
             message.content = re.sub(
-                f"^<@!?{self.client.user.id}>", "", message.content
+                f"<@!?{self.client.user.id}>", "", message.content, count=1
             )
 
         command_args = parse_arguments(message.content)
@@ -212,12 +212,13 @@ class Bot(object):
 
         command_found = False
 
+        if self.lower_command_names:
+            command_args[0] = command_args[0].lower()
+
         for command in self.__commands:
             if re.match(
                 command.regex,
-                command_args[0].lower()
-                if self.lower_command_names
-                else command_args[0],
+                command_args[0],
             ):
                 if self.log_calls:
                     debug(message, str(command_args))
