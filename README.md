@@ -182,6 +182,20 @@ async def message(client: discord.client, message: discord.Message):
 bot.register_watcher(message)  # any message was sent (except this bot messages)
 ```
 
+### Registering events
+
+Register a [discord API event](https://discordpy.readthedocs.io/en/latest/api.html#discord-api-events)
+
+The function must be exactly named after the event
+
+```python
+async def on_ready() -> bool:
+    print("on_ready")
+    return False  # if True is returned, prevent miniscord handling of the event
+
+bot.register_event(on_ready)
+```
+
 ### Game status
 
 On starting, the bot will cycle through 2-3 "game status" (under its name as "playing xxx") :
@@ -329,6 +343,7 @@ bot.start()  # this bot respond to "|help", "|info" and "|hello"
 
 ## Versions
 
+* v0.0.3 : custom events handling
 * v0.0.2 : new answer capability
 * v0.0.1 : initial version
 
