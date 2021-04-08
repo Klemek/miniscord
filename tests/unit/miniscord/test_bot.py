@@ -135,9 +135,25 @@ class TestHelp(AsyncTestCase):
 
 
 class TestRegisterEvent(TestCase):
-    @skip
-    def test_todo(self):
-        self.fail("not implemented")
+    @patch_discord
+    def test_register_event_normal(self):
+        async def on_connect():
+            pass
+
+        bot = Bot("app_name", "version")
+        bot.client.event = MagicMock()
+        bot.register_event(on_connect)
+        bot.client.event.assert_called_once_with(on_connect)
+
+    @patch_discord
+    def test_register_event_existing(self):
+        async def on_ready():
+            pass
+
+        bot = Bot("app_name", "version")
+        bot.client.event = MagicMock()
+        bot.register_event(on_ready)
+        bot.client.event.assert_not_called()
 
 
 class TestRegisterCommand(TestCase):
@@ -490,13 +506,35 @@ class TestOnMessage(AsyncTestCase):
             bot.client, message, "Test", "arg0", "arg1"
         )
 
-    @skip
+    @patch_discord
     def test_fire_registered_event(self):
-        self.fail("not implemented")
+        bot = Bot("app_name", "version")
+        on_message = AsyncMock()
+        on_message.__name__ = "on_message"
+        on_message.return_value = True
+        bot.register_event(on_message)
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        message = AsyncMock()
+        message.content = "hello there"
+        self._await(bot.on_message(message))
+        on_message.assert_awaited_once_with(message)
+        watcher_callback.assert_awaited_once_with(bot.client, message)
 
-    @skip
+    @patch_discord
     def test_fire_registered_event_cancel(self):
-        self.fail("not implemented")
+        bot = Bot("app_name", "version")
+        on_message = AsyncMock()
+        on_message.__name__ = "on_message"
+        on_message.return_value = False
+        bot.register_event(on_message)
+        watcher_callback = AsyncMock()
+        bot.register_watcher(watcher_callback)
+        message = AsyncMock()
+        message.content = "hello there"
+        self._await(bot.on_message(message))
+        on_message.assert_awaited_once_with(message)
+        watcher_callback.assert_not_awaited()
 
 
 class TestOnReady(AsyncTestCase):
@@ -570,13 +608,45 @@ class TestOnReady(AsyncTestCase):
         with open(self.LOG_PATH, encoding="utf-8", mode="r") as f:
             self.assertEqual(f"test", f.read())
 
-    @skip
-    def test_fire_registered_event(self):
-        self.fail("not implemented")
+    @patch_discord_arg
+    def test_fire_registered_event(self, client_mock):
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = None
+        on_ready = AsyncMock()
+        on_ready.__name__ = "on_ready"
+        on_ready.return_value = True
+        bot.register_event(on_ready)
+        ex = Exception("test")
+        client_mock.change_presence.side_effect = ex
+        try:
+            with patch("discord.Game") as game_mock:
+                game_mock.return_value = "activity"
+                self._await(bot.on_ready())
+        except Exception as error:
+            self.assertEqual(ex, error)
+        on_ready.assert_awaited_once()
+        client_mock.change_presence.assert_called_with(
+            activity="activity", status=discord.Status.online
+        )
 
-    @skip
-    def test_fire_registered_event_cancel(self):
-        self.fail("not implemented")
+    @patch_discord_arg
+    def test_fire_registered_event_cancel(self, client_mock):
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = None
+        on_ready = AsyncMock()
+        on_ready.__name__ = "on_ready"
+        on_ready.return_value = False
+        bot.register_event(on_ready)
+        ex = Exception("test")
+        client_mock.change_presence.side_effect = ex
+        try:
+            with patch("discord.Game") as game_mock:
+                game_mock.return_value = "activity"
+                self._await(bot.on_ready())
+        except Exception as error:
+            self.assertEqual(ex, error)
+        on_ready.assert_awaited_once()
+        client_mock.change_presence.assert_not_called()
 
 
 class TestOnGuildJoin(AsyncTestCase):
@@ -620,13 +690,31 @@ class TestOnGuildJoin(AsyncTestCase):
                 f.read(),
             )
 
-    @skip
+    @patch_discord
     def test_fire_registered_event(self):
-        self.fail("not implemented")
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = self.LOG_PATH
+        on_guild_join = AsyncMock()
+        on_guild_join.__name__ = "on_guild_join"
+        on_guild_join.return_value = True
+        bot.register_event(on_guild_join)
+        guild = AsyncMock()
+        self._await(bot.on_guild_join(guild))
+        on_guild_join.assert_awaited_once_with(guild)
+        self.assertTrue(path.exists(self.LOG_PATH))
 
-    @skip
+    @patch_discord
     def test_fire_registered_event_cancel(self):
-        self.fail("not implemented")
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = self.LOG_PATH
+        on_guild_join = AsyncMock()
+        on_guild_join.__name__ = "on_guild_join"
+        on_guild_join.return_value = False
+        bot.register_event(on_guild_join)
+        guild = AsyncMock()
+        self._await(bot.on_guild_join(guild))
+        on_guild_join.assert_awaited_once_with(guild)
+        self.assertFalse(path.exists(self.LOG_PATH))
 
 
 class TestOnGuildRemove(AsyncTestCase):
@@ -670,10 +758,28 @@ class TestOnGuildRemove(AsyncTestCase):
                 f.read(),
             )
 
-    @skip
+    @patch_discord
     def test_fire_registered_event(self):
-        self.fail("not implemented")
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = self.LOG_PATH
+        on_guild_remove = AsyncMock()
+        on_guild_remove.__name__ = "on_guild_remove"
+        on_guild_remove.return_value = True
+        bot.register_event(on_guild_remove)
+        guild = AsyncMock()
+        self._await(bot.on_guild_remove(guild))
+        on_guild_remove.assert_awaited_once_with(guild)
+        self.assertTrue(path.exists(self.LOG_PATH))
 
-    @skip
+    @patch_discord
     def test_fire_registered_event_cancel(self):
-        self.fail("not implemented")
+        bot = Bot("app_name", "version")
+        bot.guild_logs_file = self.LOG_PATH
+        on_guild_remove = AsyncMock()
+        on_guild_remove.__name__ = "on_guild_remove"
+        on_guild_remove.return_value = False
+        bot.register_event(on_guild_remove)
+        guild = AsyncMock()
+        self._await(bot.on_guild_remove(guild))
+        on_guild_remove.assert_awaited_once_with(guild)
+        self.assertFalse(path.exists(self.LOG_PATH))
