@@ -59,11 +59,12 @@ class Bot(object):
         self.__commands = []
         self.__fallback = None
         self.__events = {}
-        self.games = [f"v{version}", lambda: f"{len(self.client.guilds)} guilds"]
+        self.games = [f"v{version}", lambda: f"{len(self.guilds)} guilds"]
         if self.alias is not None:
             self.games += [f"{self.alias}help"]
         self.client = discord.Client()
         self.client.bot = self
+        self.guilds = []
         self.__register_events()
         self.__register_commands()
 
@@ -106,7 +107,7 @@ class Bot(object):
             f"```\n"
             f"{self.app_name} v{self.version}\n"
             f"* Started at {self.__t0:%Y-%m-%d %H:%M}\n"
-            f"* Connected to {len(self.client.guilds)} guilds\n"
+            f"* Connected to {len(self.guilds)} guilds\n"
             f"```",
             reference=message if self.answer else None,
             mention_author=self.answer_mention,
@@ -154,15 +155,15 @@ class Bot(object):
     async def on_ready(self, *args):
         if await self.__handle_event("on_ready", args):
             return
-
+        self.guilds = [guild async for guild in self.client.fetch_guilds(limit=1000)]
         # Change status
         logging.info(
-            f"{self.client.user} (v{self.version}) has connected to {len(self.client.guilds)} Discord guilds"
+            f"{self.client.user} (v{self.version}) has connected to {len(self.guilds)} Discord guilds"
         )
         if self.guild_logs_file is not None and not os.path.exists(
             self.guild_logs_file
         ):
-            for guild in self.client.guilds:
+            for guild in self.guilds:
                 await self.on_guild_join(guild)
         while True:
             await self.client.change_presence(
