@@ -192,7 +192,7 @@ The function must be exactly named after the event
 ```python
 async def on_ready() -> bool:
     print("on_ready")
-    return False  # if True is returned, prevent miniscord handling of the event
+    return True  # if False is returned, prevent miniscord's handling of the event
 
 bot.register_event(on_ready)
 ```
