@@ -344,6 +344,7 @@ bot.start()  # this bot respond to "|help", "|info" and "|hello"
 
 ## Versions
 
+* v0.1.0 : Discord v2 API with intents
 * v0.0.3 : custom events handling
 * v0.0.2 : new answer capability
 * v0.0.1 : initial version
