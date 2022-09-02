@@ -62,7 +62,9 @@ class Bot(object):
         self.games = [f"v{version}", lambda: f"{len(self.guilds)} guilds"]
         if self.alias is not None:
             self.games += [f"{self.alias}help"]
-        self.client = discord.Client()
+        intents = discord.Intents.default()
+        intents.message_content = True
+        self.client = discord.Client(intents=intents)
         self.client.bot = self
         self.guilds = []
         self.__register_events()
